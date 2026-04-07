@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "UserInputActionAsset",
+    "maps": [
+        {
+            "name": "Player",
+            "id": "2249a29a-2287-4e2a-80be-5fc4fe7675e0",
+            "actions": [
+                {
+                    "name": "Drop",
+                    "type": "Button",
+                    "id": "57c07929-646b-4f12-8141-50c34e5b3b34",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "78665138-8422-4788-844e-1d747163ea6c",
+                    "path": "<Pointer>/press",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Drop",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

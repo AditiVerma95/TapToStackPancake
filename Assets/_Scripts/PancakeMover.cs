@@ -1,74 +1,72 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using System;
 
 public class PancakeMover : MonoBehaviour
 {
-    [Header("Movement")]
+    public static event Action OnPancakePlaced;
+
     public float moveSpeed = 3f;
     public float moveRange = 3f;
 
     private bool isDropped = false;
-    private Rigidbody rb;
-    private PancakeSpawner spawner;
+    private bool hasTriggered = false;
 
+    private Rigidbody rb;
     private float startY;
 
-    public void Initialize(PancakeSpawner spawnerRef)
-    {
-        spawner = spawnerRef;
-    }
-
-    void Start()
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
+    }
+
+    void OnEnable()
+    {
+        ResetPancake();
+    }
+
+    public void ResetPancake()
+    {
+        isDropped = false;
+        hasTriggered = false;
+
         rb.useGravity = false;
+        rb.isKinematic = false;
+        rb.linearVelocity = Vector3.zero;
 
         startY = transform.position.y;
-        
     }
 
     void Update()
     {
         if (isDropped) return;
 
-        MoveSmooth();
-
-
-
-        if (Mouse.current.leftButton.wasPressedThisFrame ||
-            (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame))
-        {
-            Drop();
-        }
-    }
-
-    void MoveSmooth()
-    {
         float x = Mathf.PingPong(Time.time * moveSpeed, moveRange * 2) - moveRange;
-
         transform.position = new Vector3(x, startY, transform.position.z);
     }
 
-    void Drop()
+    public void Drop()
     {
-        isDropped = true;
-        rb.useGravity = true;
+        if (isDropped) return;
 
-        // Add slight push down
-        rb.AddForce(Vector3.down * 2f, ForceMode.Impulse);
+        isDropped = true;
+
+        rb.useGravity = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
     }
 
     void OnCollisionEnter(Collision collision)
     {
         if (!isDropped) return;
+        if (hasTriggered) return;
 
         if (collision.gameObject.CompareTag("Pancake") || collision.gameObject.CompareTag("Ground"))
         {
-            isDropped = false; // prevent double trigger
+            hasTriggered = true;
 
-            spawner.SpawnNextPancake();
+            OnPancakePlaced?.Invoke();
 
-            enabled = false; // stop this pancake completely
+            enabled = false;
         }
     }
 }
