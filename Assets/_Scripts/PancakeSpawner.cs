@@ -9,7 +9,7 @@ public class PancakeSpawner : MonoBehaviour
     public CameraFollow camFollow;
 
     [Header("UI")]
-    public TextMeshProUGUI scoreText; // shows ": 0", ": 1", etc.
+    public TextMeshProUGUI scoreText;
 
     [Header("Pooling")]
     public int poolSize = 50;
@@ -18,7 +18,6 @@ public class PancakeSpawner : MonoBehaviour
 
     private GameObject currentPancake;
     private int stackCount = 0;
-
     private int score = 0;
     private int highScore = 0;
 
@@ -26,14 +25,20 @@ public class PancakeSpawner : MonoBehaviour
 
     void Awake()
     {
-        // Input
         inputActions = new UserInputActionAsset();
         inputActions.Enable();
 
-        // Pool
         for (int i = 0; i < poolSize; i++)
         {
             GameObject obj = Instantiate(pancakePrefab);
+
+            // 🔥 RESET PARTICLES IN POOL
+            ParticleSystem[] psList = obj.GetComponentsInChildren<ParticleSystem>();
+            foreach (var ps in psList)
+            {
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
             obj.SetActive(false);
             pool.Enqueue(obj);
         }
@@ -48,6 +53,7 @@ public class PancakeSpawner : MonoBehaviour
 
     void Start()
     {
+        GameOverArea.isGameOver = false;
         highScore = PlayerPrefs.GetInt("HighScore", 0);
         UpdateScoreUI();
 
@@ -56,6 +62,8 @@ public class PancakeSpawner : MonoBehaviour
 
     void Update()
     {
+        if (GameOverArea.isGameOver) return;
+
         if (inputActions.Player.Drop.WasPressedThisFrame())
         {
             HandleDrop();
@@ -77,19 +85,25 @@ public class PancakeSpawner : MonoBehaviour
         score = 0;
         UpdateScoreUI();
 
-        currentPancake = GetFromPool(new Vector3(0, 5f, 0));
+        currentPancake = GetFromPool(new Vector3(0, 2.5f, 0));
+
         camFollow.UpdateCameraHeight(stackCount);
     }
 
     void SpawnNextPancake()
     {
+        if (GameOverArea.isGameOver) return;
+
         if (currentPancake == null)
         {
             Debug.LogError("Current pancake is NULL!");
             return;
         }
 
-        // ✅ Update score
+        // 🔥 PLAY RANDOM CRUMBS FROM THIS PANCAKE
+        PlayCrumbsRandom(currentPancake);
+
+        // Score update
         score++;
 
         if (score > highScore)
@@ -108,9 +122,15 @@ public class PancakeSpawner : MonoBehaviour
             return;
         }
 
-        float height = col.bounds.size.y;
+        float topY = col.bounds.max.y;
 
-        Vector3 spawnPos = currentPancake.transform.position + Vector3.up * (height + 0.5f);
+        float spawnOffset = 1.2f;
+
+        Vector3 spawnPos = new Vector3(
+            currentPancake.transform.position.x,
+            topY + spawnOffset,
+            currentPancake.transform.position.z
+        );
 
         currentPancake = GetFromPool(spawnPos);
 
@@ -135,6 +155,13 @@ public class PancakeSpawner : MonoBehaviour
         obj.transform.rotation = Quaternion.identity;
         obj.SetActive(true);
 
+        // 🔥 RESET PARTICLES WHEN REUSING
+        ParticleSystem[] psList = obj.GetComponentsInChildren<ParticleSystem>();
+        foreach (var ps in psList)
+        {
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
         PancakeMover mover = obj.GetComponent<PancakeMover>();
         if (mover != null)
             mover.ResetPancake();
@@ -142,12 +169,45 @@ public class PancakeSpawner : MonoBehaviour
         return obj;
     }
 
+    void PlayCrumbsRandom(GameObject pancake)
+    {
+        ParticleSystem[] systems = pancake.GetComponentsInChildren<ParticleSystem>();
+
+        if (systems.Length == 0) return;
+
+        int rand = Random.Range(0, 3); // 0 left, 1 right, 2 both
+
+        if (systems.Length == 1)
+        {
+            PlayParticle(systems[0]);
+            return;
+        }
+
+        if (rand == 0)
+        {
+            PlayParticle(systems[0]);
+        }
+        else if (rand == 1)
+        {
+            PlayParticle(systems[1]);
+        }
+        else
+        {
+            PlayParticle(systems[0]);
+            PlayParticle(systems[1]);
+        }
+    }
+
+    void PlayParticle(ParticleSystem ps)
+    {
+        if (ps == null) return;
+
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        ps.Play();
+    }
+
     void UpdateScoreUI()
     {
-        // 👉 Simple format like you wanted
         scoreText.text = " : " + score.ToString();
-
-        // If later you want:
-        // scoreText.text = "Score : " + score + "  Best : " + highScore;
     }
 }
