@@ -7,6 +7,7 @@ public class PancakeMover : MonoBehaviour
 
     public float moveSpeed = 3f;
     public float moveRange = 3f;
+    public AudioClip collisionSFX;
 
     private bool isDropped = false;
     private bool hasTriggered = false;
@@ -63,6 +64,12 @@ public class PancakeMover : MonoBehaviour
         if (collision.gameObject.CompareTag("Pancake") || collision.gameObject.CompareTag("Ground"))
         {
             hasTriggered = true;
+
+            // Play SFX sound
+            if (collisionSFX != null && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySFX(collisionSFX);
+            }
 
             OnPancakePlaced?.Invoke();
 

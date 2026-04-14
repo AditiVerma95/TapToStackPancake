@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.EventSystems;
 
 public class PancakeSpawner : MonoBehaviour
 {
@@ -32,7 +33,6 @@ public class PancakeSpawner : MonoBehaviour
         {
             GameObject obj = Instantiate(pancakePrefab);
 
-            // 🔥 RESET PARTICLES IN POOL
             ParticleSystem[] psList = obj.GetComponentsInChildren<ParticleSystem>();
             foreach (var ps in psList)
             {
@@ -66,6 +66,14 @@ public class PancakeSpawner : MonoBehaviour
 
         if (inputActions.Player.Drop.WasPressedThisFrame())
         {
+            
+            if (EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            if (Input.touchCount > 0 &&
+                EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+                return;
+
             HandleDrop();
         }
     }
@@ -86,7 +94,6 @@ public class PancakeSpawner : MonoBehaviour
         UpdateScoreUI();
 
         currentPancake = GetFromPool(new Vector3(0, 2.5f, 0));
-
         camFollow.UpdateCameraHeight(stackCount);
     }
 
@@ -100,10 +107,8 @@ public class PancakeSpawner : MonoBehaviour
             return;
         }
 
-        // 🔥 PLAY RANDOM CRUMBS FROM THIS PANCAKE
         PlayCrumbsRandom(currentPancake);
 
-        // Score update
         score++;
 
         if (score > highScore)
@@ -123,7 +128,6 @@ public class PancakeSpawner : MonoBehaviour
         }
 
         float topY = col.bounds.max.y;
-
         float spawnOffset = 1.2f;
 
         Vector3 spawnPos = new Vector3(
@@ -140,22 +144,12 @@ public class PancakeSpawner : MonoBehaviour
 
     GameObject GetFromPool(Vector3 pos)
     {
-        GameObject obj;
-
-        if (pool.Count > 0)
-        {
-            obj = pool.Dequeue();
-        }
-        else
-        {
-            obj = Instantiate(pancakePrefab);
-        }
+        GameObject obj = pool.Count > 0 ? pool.Dequeue() : Instantiate(pancakePrefab);
 
         obj.transform.position = pos;
         obj.transform.rotation = Quaternion.identity;
         obj.SetActive(true);
 
-        // 🔥 RESET PARTICLES WHEN REUSING
         ParticleSystem[] psList = obj.GetComponentsInChildren<ParticleSystem>();
         foreach (var ps in psList)
         {
@@ -172,10 +166,9 @@ public class PancakeSpawner : MonoBehaviour
     void PlayCrumbsRandom(GameObject pancake)
     {
         ParticleSystem[] systems = pancake.GetComponentsInChildren<ParticleSystem>();
-
         if (systems.Length == 0) return;
 
-        int rand = Random.Range(0, 3); // 0 left, 1 right, 2 both
+        int rand = Random.Range(0, 3);
 
         if (systems.Length == 1)
         {
@@ -183,14 +176,8 @@ public class PancakeSpawner : MonoBehaviour
             return;
         }
 
-        if (rand == 0)
-        {
-            PlayParticle(systems[0]);
-        }
-        else if (rand == 1)
-        {
-            PlayParticle(systems[1]);
-        }
+        if (rand == 0) PlayParticle(systems[0]);
+        else if (rand == 1) PlayParticle(systems[1]);
         else
         {
             PlayParticle(systems[0]);

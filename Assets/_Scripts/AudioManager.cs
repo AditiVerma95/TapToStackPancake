@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
-public class AudioManager : MonoBehaviour {
+public class AudioManager : MonoBehaviour
+{
     public static AudioManager Instance;
 
     public AudioMixer mixer;
@@ -16,17 +17,21 @@ public class AudioManager : MonoBehaviour {
     private int currentTrack = 0;
     public int CurrentTrackIndex => currentTrack;
 
-    void Awake() {
-        if (Instance == null) {
+    void Awake()
+    {
+        if (Instance == null)
+        {
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        else {
+        else
+        {
             Destroy(gameObject);
         }
     }
 
-    void Start() {
+    void Start()
+    {
         float master = PlayerPrefs.GetFloat("MASTER", 1f);
         float bgm = PlayerPrefs.GetFloat("BGM", 1f);
         float sfx = PlayerPrefs.GetFloat("SFX", 1f);
@@ -38,7 +43,8 @@ public class AudioManager : MonoBehaviour {
         PlayBGM(0);
     }
 
-    public void PlayBGM(int index) {
+    public void PlayBGM(int index)
+    {
         if (index < 0 || index >= tracks.Length) return;
 
         currentTrack = index;
@@ -47,21 +53,25 @@ public class AudioManager : MonoBehaviour {
         bgmSource.Play();
     }
 
-    public void PlaySFX(AudioClip clip) {
+    public void PlaySFX(AudioClip clip)
+    {
         sfxSource.PlayOneShot(clip);
     }
 
-    public void SetBGMVolume(float value) {
+    public void SetBGMVolume(float value)
+    {
         mixer.SetFloat("BGMVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("BGM", value);
     }
 
-    public void SetSFXVolume(float value) {
+    public void SetSFXVolume(float value)
+    {
         mixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("SFX", value);
     }
 
-    public void SetMasterVolume(float value) {
+    public void SetMasterVolume(float value)
+    {
         mixer.SetFloat("MasterVolume", Mathf.Log10(value) * 20);
         PlayerPrefs.SetFloat("MASTER", value);
     }
